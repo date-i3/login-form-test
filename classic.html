@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通常フォーム送信テスト</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form, .group { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>通常フォーム送信テスト</h1>
+<p>ID とパスワードを入力して、3 種類のいずれかの送信ボタンを押してください。</p>
+
+<form id="loginForm" action="success.html" method="GET">
+  <label>ID</label>
+  <input name="username" type="text" value="" autocomplete="username">
+  <label>パスワード</label>
+  <input name="password" type="password" value="" autocomplete="current-password">
+  <input type="hidden" name="pattern" id="patternField" value="">
+  <button id="patternA" type="submit"
+          onclick="document.getElementById('patternField').value='A'">
+    送信ボタンを押して送信
+  </button>
+  <p class="note">HTML 標準の送信方法（送信ボタンを押すと submit イベントが発火します）。一般的なログインフォームと同じ動作です。</p>
+</form>
+
+<button id="patternB" onclick="
+  document.getElementById('patternField').value='B';
+  document.getElementById('loginForm').requestSubmit();
+">
+  JavaScript で送信（submit イベント発火）
+</button>
+<p class="note">JavaScript からフォームを送信する方式。送信時に submit イベントが発火するため、フォームのバリデーション処理が走ります。React や Vue で標準的に使われます。</p>
+
+<button id="patternC" onclick="
+  document.getElementById('patternField').value='C';
+  document.getElementById('loginForm').submit();
+">
+  JavaScript で送信（submit イベント発火しない）
+</button>
+<p class="note">JavaScript からフォームを送信する方式。<strong>submit イベントが発火しない</strong>ため、バリデーション処理がスキップされる古い書き方です。テスト対象ブラウザの保存機能では取りこぼされる可能性があります。</p>
+
+<details>
+<summary>実装詳細（開発者向け）</summary>
+<pre>パターン A: button[type=submit] のネイティブ送信
+  - submit イベント発火する
+  - WKNavigationType.formSubmitted も発火する
+
+パターン B: form.requestSubmit() — submit イベントを発火する JS 送信
+  - submit イベント発火する
+  - WKNavigationType.formSubmitted も発火する
+
+パターン C: form.submit() — submit イベントを bypass する JS 送信
+  - submit イベント発火しない
+  - WKNavigationType.formSubmitted は発火する（実機確認済）
+  - JS submit listener 方式では取りこぼされる可能性
+
+WKNavigationType.formSubmitted が発火するかを確認するためのテストパターン。
+遷移先 success.html にはフォームがないため、3 重防御の DOM 再判定で「成功推定」となります。</pre>
+</details>
+
+</body>
+</html>

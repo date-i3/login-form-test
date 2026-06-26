@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ID・パスワード保存テスト</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+h1 { color: #333; }
+.card { border: 1px solid #ccc; padding: 16px; margin: 16px 0; border-radius: 8px; }
+.card a { font-size: 18px; font-weight: 600; text-decoration: none; color: #007aff; }
+.card p { color: #666; font-size: 14px; margin: 8px 0 0; }
+ol { padding-left: 20px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>ID・パスワード保存テスト</h1>
+
+<p>このページは特定のブラウザでの ID・パスワード保存機能の動作確認用です。フォームを送信したときに保存ダイアログが正しく表示されるか、再訪時に自動入力 ActionSheet が出るかを確認します。</p>
+
+<h2>テストの進め方</h2>
+<ol>
+<li>下記からテストパターンを選びます</li>
+<li>ID とパスワードを入力して送信ボタンを押します</li>
+<li>「このパスワードを保存しますか？」のダイアログが出たら「保存」を押します</li>
+<li>戻って同じページを開き、自動入力 ActionSheet が出るかを確認します</li>
+</ol>
+
+<h2>テストパターン</h2>
+
+<div class="card">
+<a href="classic.html">通常フォーム送信テスト →</a>
+<p>HTML の <code>&lt;form&gt;</code> を使った 3 種類の送信パターン。一般的な Web サイトで多く使われる形式です。</p>
+</div>
+
+<div class="card">
+<a href="spa.html">SPA 形式送信テスト →</a>
+<p>React や Vue 等の SPA フレームワークがよく使う 4 種類の送信パターン。<code>fetch</code> や <code>pushState</code> による画面遷移も含みます。</p>
+</div>
+
+<h2>期待される動作</h2>
+<ul>
+<li>初回送信時：「このパスワードを保存しますか？」のダイアログが表示される</li>
+<li>「保存」を押すと iOS のキーチェーンに保存される</li>
+<li>再訪時：「保存されたパスワードを自動入力しますか？」の ActionSheet が表示される</li>
+<li>「自動入力」を押すと ID/パスワード欄に値が自動で入る</li>
+</ul>
+
+</body>
+</html>
