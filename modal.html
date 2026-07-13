@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モーダル / ダイアログ型ログインテスト</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; cursor: pointer; }
+button.trigger { width: 100%; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+#log { background: #f5f5f5; padding: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; border-radius: 4px; margin-top: 16px; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
+.modal-overlay.open { display: flex; }
+.modal-panel { background: white; padding: 24px; border-radius: 8px; max-width: 400px; width: 90%; box-sizing: border-box; }
+.modal-panel .actions { display: flex; gap: 8px; margin-top: 12px; }
+.modal-panel .actions button { flex: 1; margin: 0; }
+
+dialog { padding: 24px; border-radius: 8px; border: 1px solid #ccc; max-width: 400px; width: 90%; box-sizing: border-box; }
+dialog form { border: none; padding: 0; margin: 0; }
+dialog .actions { display: flex; gap: 8px; margin-top: 12px; }
+dialog .actions button { flex: 1; margin: 0; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>モーダル / ダイアログ型ログインテスト</h1>
+<p>ページ遷移を伴わず、モーダルウィンドウ内でログインフォームが出現するパターンです。EC サイトのカート内ログインや「ログインしてください」オーバーレイでよく見る形式。</p>
+
+<h2>パターン J: HTML5 <code>&lt;dialog&gt;</code> + ネイティブ form 送信</h2>
+<button class="trigger" type="button" onclick="document.getElementById('dialogJ').showModal()">ダイアログを開く (パターン J)</button>
+<dialog id="dialogJ">
+  <form method="GET" action="success.html">
+    <label>ID</label>
+    <input name="username" type="text" value="" autocomplete="username">
+    <label>パスワード</label>
+    <input name="password" type="password" value="" autocomplete="current-password">
+    <input type="hidden" name="pattern" value="J">
+    <div class="actions">
+      <button type="button" onclick="document.getElementById('dialogJ').close()">キャンセル</button>
+      <button type="submit">ログイン (パターン J)</button>
+    </div>
+  </form>
+</dialog>
+<p class="note">HTML5 標準の <code>&lt;dialog&gt;</code> 要素 + ネイティブ form 送信。送信後は success.html へ遷移するので、<code>WKNavigationType.formSubmitted</code> が発火します。</p>
+
+<h2>パターン K: div オーバーレイ + fetch (画面遷移無し)</h2>
+<button class="trigger" type="button" onclick="openModalK()">オーバーレイを開く (パターン K)</button>
+<div id="modalK" class="modal-overlay">
+  <div class="modal-panel">
+    <h3>ログイン (パターン K)</h3>
+    <label>ID</label>
+    <input id="usernameK" name="username" type="text" value="" autocomplete="username">
+    <label>パスワード</label>
+    <input id="passwordK" name="password" type="password" value="" autocomplete="current-password">
+    <div class="actions">
+      <button type="button" onclick="closeModalK()">キャンセル</button>
+      <button type="button" onclick="submitModalK()">ログイン (パターン K)</button>
+    </div>
+  </div>
+</div>
+<p class="note">典型的な div オーバーレイ + JS 完全制御 (form 要素なし)。送信ボタン押下 → fetch → モーダル閉じるだけで先へ進むタイプ。<strong>navigation も submit イベントも発火しない</strong>ため、両方式で検知不可。</p>
+
+<h2>パターン L: div オーバーレイ + form + preventDefault (React 典型)</h2>
+<button class="trigger" type="button" onclick="openModalL()">オーバーレイを開く (パターン L)</button>
+<div id="modalL" class="modal-overlay">
+  <div class="modal-panel">
+    <h3>ログイン (パターン L)</h3>
+    <form id="modalLForm">
+      <label>ID</label>
+      <input name="username" type="text" value="" autocomplete="username">
+      <label>パスワード</label>
+      <input name="password" type="password" value="" autocomplete="current-password">
+      <div class="actions">
+        <button type="button" onclick="closeModalL()">キャンセル</button>
+        <button type="submit">ログイン (パターン L)</button>
+      </div>
+    </form>
+  </div>
+</div>
+<p class="note">React 等でよくある、モーダル内 form + submit イベント横取り + fetch。<strong>submit イベントが発火する</strong>ため、JS submit listener 方式なら検知可能。</p>
+
+<h2>動作ログ</h2>
+<div id="log">（ボタンを押すとここに JS の動作が表示されます）</div>
+
+<details>
+<summary>実装詳細（開発者向け）</summary>
+<pre>パターン J: &lt;dialog&gt; + ネイティブ form 送信
+  - submit イベント発火する
+  - WKNavigationType.formSubmitted で success.html に遷移
+  - 検出可能: モーダル内でも form があれば通常の検出フローに乗る
+  - 注意: readLoginForm.js は body 直下スキャン (querySelectorAll)。
+    dialog 内の input も querySelectorAll では拾えるはず
+
+パターン K: div オーバーレイ + JS 完全制御
+  - submit イベント発火しない (form 要素なし)
+  - navigation 発火しない (モーダル閉じるだけ)
+  - 検出不可: 保存契機が一切ない
+
+パターン L: div オーバーレイ + form + preventDefault
+  - submit イベント発火する
+  - navigation 発火しない (preventDefault + fetch)
+  - JS submit listener 方式なら検出可能 ← PR #247 の新方式の強み
+  - 逆に navigation policy 方式では取りこぼされる
+
+要点:
+  - モーダル内フォームの検出可否は「form 要素の有無」と「submit イベントの発火」に依存
+  - form が無い型 (パターン K) は保存契機自体が存在しないため、
+    どのブラウザでも保存不可 (ユーザーが手動でキーチェーンに保存する必要)</pre>
+</details>
+
+<script>
+function log(msg) {
+  const el = document.getElementById('log');
+  const ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+}
+
+function openModalK() {
+  document.getElementById('modalK').classList.add('open');
+  log('パターン K: div オーバーレイを開いた');
+}
+function closeModalK() {
+  document.getElementById('modalK').classList.remove('open');
+}
+function submitModalK() {
+  const u = document.getElementById('usernameK').value;
+  const p = document.getElementById('passwordK').value;
+  log('パターン K: fetch 送信 (navigation 無し) username=' + u.length + '桁 password=' + p.length + '桁');
+  fetch('success.html').then(function (r) {
+    log('パターン K: fetch 完了 status=' + r.status);
+    closeModalK();
+    log('パターン K: モーダルを閉じただけで先へ進む → 検出契機なし');
+  });
+}
+
+function openModalL() {
+  document.getElementById('modalL').classList.add('open');
+  log('パターン L: div オーバーレイを開いた');
+}
+function closeModalL() {
+  document.getElementById('modalL').classList.remove('open');
+}
+function submitModalL(event) {
+  event.preventDefault();
+  log('パターン L: submit イベント発火後 preventDefault → fetch');
+  fetch('success.html').then(function (r) {
+    log('パターン L: fetch 完了 status=' + r.status);
+    closeModalL();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('modalLForm').addEventListener('submit', submitModalL);
+});
+</script>
+
+</body>
+</html>
