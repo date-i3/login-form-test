@@ -16,56 +16,37 @@ details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: au
 #log { background: #f5f5f5; padding: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; border-radius: 4px; margin-top: 16px; }
 .back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
 .note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+.card { border: 1px solid #ccc; padding: 16px; margin: 16px 0; border-radius: 8px; }
+.card a { font-size: 18px; font-weight: 600; text-decoration: none; color: #007aff; }
+.card p { color: #666; font-size: 14px; margin: 8px 0 0; }
 </style>
 </head>
 <body>
 <a href="index.html" class="back">← トップへ戻る</a>
 <h1>SPA 形式送信テスト</h1>
-<p>React や Vue 等のフレームワークが採用しがちな 4 種類の送信パターンです。ID とパスワードを入力して、いずれかのボタンを押してください。</p>
+<p>React や Vue 等のフレームワークが採用しがちな 4 種類の送信パターンです。各パターンを個別のページから試してください。</p>
 
-<div class="group">
-  <label>ID</label>
-  <input id="username" name="username" type="text" value="" autocomplete="username">
-  <label>パスワード</label>
-  <input id="password" name="password" type="password" value="" autocomplete="current-password">
+<p class="note">各パターンを独立ページに分離しているのは、同一ページに <code>autocomplete="username"</code> 属性の input が複数並ぶと、ブラウザの自動入力機能が「候補が曖昧」と判定してスキップするため。1 パターン 1 ページ構成で本来の挙動を検証する。</p>
 
-  <button id="patternDBtn" type="button" onclick="patternD()">
-    fetch で送信 + URL 書き換え
-  </button>
-  <p class="note">URL は JavaScript で書き換えるだけで、画面遷移は起こさず DOM を差し替える方式（最もモダンな SPA 形式）。submit イベントは発火しないため、<strong>テスト対象ブラウザの保存機能では取りこぼされます</strong>。</p>
-
-  <button id="patternEBtn" type="button" onclick="patternE()">
-    location.assign で画面遷移
-  </button>
-  <p class="note">古典的な画面遷移。<code>location.assign</code> で次のページに移動します。submit イベントは発火しないため、<strong>テスト対象ブラウザの保存機能では取りこぼされます</strong>。</p>
+<div class="card">
+<a href="spa-fetch.html">パターン D: fetch + URL 書き換え →</a>
+<p>fetch で送信して <code>history.pushState</code> で URL を書き換えるだけの純粋 SPA 形式。<code>&lt;form&gt;</code> タグ無し。</p>
 </div>
 
-<form id="reactForm" action="success.html" method="GET">
-  <label>ID</label>
-  <input id="usernameF" name="username" type="text" value="" autocomplete="username">
-  <label>パスワード</label>
-  <input id="passwordF" name="password" type="password" value="" autocomplete="current-password">
+<div class="card">
+<a href="spa-assign.html">パターン E: location.assign →</a>
+<p><code>location.assign</code> による古典的な画面遷移。<code>&lt;form&gt;</code> タグ無し。</p>
+</div>
 
-  <button id="patternFBtn" type="button" onclick="patternF()">
-    フォーム + JavaScript 完全制御で送信
-  </button>
-  <p class="note">フォームはあるが送信は完全に JavaScript 制御。送信ボタンは <code>type="button"</code> で submit イベントが発火しないため、<strong>テスト対象ブラウザの保存機能では取りこぼされます</strong>。</p>
-</form>
+<div class="card">
+<a href="spa-js-form.html">パターン F: フォーム + JS 完全制御 →</a>
+<p><code>&lt;form&gt;</code> はあるが送信ボタンは <code>type="button"</code>。submit イベントを一切発火させず JavaScript のみで処理。</p>
+</div>
 
-<form id="reactGForm" action="success.html" method="GET">
-  <label>ID</label>
-  <input id="usernameG" name="username" type="text" value="" autocomplete="username">
-  <label>パスワード</label>
-  <input id="passwordG" name="password" type="password" value="" autocomplete="current-password">
-
-  <button id="patternGBtn" type="submit">
-    フォーム + submit イベント横取りで送信
-  </button>
-  <p class="note">送信ボタン押下 → submit イベント発火 → JavaScript で横取りして処理。React 等で典型的な書き方で、<strong>テスト対象ブラウザの保存機能でも拾えます</strong>。</p>
-</form>
-
-<h2>動作ログ</h2>
-<div id="log">（ボタンを押すとここに JS の動作が表示されます）</div>
+<div class="card">
+<a href="spa-submit-preventdefault.html">パターン G: フォーム + submit 横取り →</a>
+<p><code>&lt;form&gt;</code> ＋ <code>type="submit"</code>。submit イベントを <code>addEventListener</code> で拾って <code>preventDefault</code>。React 等で典型的な書き方。</p>
+</div>
 
 <details>
 <summary>実装詳細（開発者向け）</summary>
@@ -91,61 +72,6 @@ details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: au
 
 パターン G が JS injection 経由で保存ダイアログを出せれば、主要ブラウザ相当の網羅率を達成。</pre>
 </details>
-
-<script>
-function log(msg) {
-  const el = document.getElementById('log');
-  const ts = new Date().toISOString().substr(11, 12);
-  el.textContent += '[' + ts + '] ' + msg + '\n';
-}
-
-function fakeLoggedIn(pattern) {
-  document.body.innerHTML =
-    '<h1>ログイン完了 (パターン ' + pattern + ')</h1>' +
-    '<p>このページは元の DOM を JavaScript で差し替えただけです。フォームが消えているため「成功推定」の対象になります。</p>' +
-    '<p><a href="index.html">← トップへ戻る</a></p>';
-}
-
-function patternD() {
-  log('パターン D: fetch + pushState 開始（form 無し）');
-  fetch('success.html').then(function(r) {
-    log('パターン D: fetch 完了 status=' + r.status);
-    history.pushState({}, '', 'success.html?pattern=D');
-    fakeLoggedIn('D');
-  });
-}
-
-function patternE() {
-  log('パターン E: location.assign 直前（form 無し）');
-  location.assign('success.html?pattern=E');
-}
-
-function patternF() {
-  log('パターン F: type=button のため native submit せず、JS で完全制御');
-  fetch('success.html').then(function(r) {
-    log('パターン F: fetch 完了 status=' + r.status);
-    history.pushState({}, '', 'success.html?pattern=F');
-    fakeLoggedIn('F');
-  });
-}
-
-function patternG(event) {
-  event.preventDefault();
-  log('パターン G: submit イベント発火後 preventDefault → fetch + pushState');
-  fetch('success.html').then(function(r) {
-    log('パターン G: fetch 完了 status=' + r.status);
-    history.pushState({}, '', 'success.html?pattern=G');
-    fakeLoggedIn('G');
-  });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  var reactGForm = document.getElementById('reactGForm');
-  if (reactGForm) {
-    reactGForm.addEventListener('submit', patternG);
-  }
-});
-</script>
 
 </body>
 </html>
