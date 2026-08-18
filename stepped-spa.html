@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google 式 2 段階ログイン: パターン I (SPA 式)</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form, .group { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+#log { background: #f5f5f5; padding: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; border-radius: 4px; margin-top: 16px; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>パターン I: SPA 式 2 段階 (同一ページ内で ID → PW)</h1>
+<p>Google 本家 (accounts.google.com) と同型の SPA 式 2 段階を再現します。ID を入力して「次へ」を押すと、ページ遷移せずに DOM を差し替えてパスワード入力欄に切り替わり、<code>history.pushState</code> で URL も書き換えます。</p>
+
+<div class="group" id="stepI">
+  <label>ID</label>
+  <input id="usernameI" name="username" type="text" value="" autocomplete="username">
+  <button type="button" onclick="patternINext()">次へ (パターン I)</button>
+</div>
+<p class="note">「次へ」を押すと DOM を差し替えてパスワード入力画面に切り替わり、<code>history.pushState</code> で URL も書き換えます。Google 本家と同型の SPA 式 2 段階。</p>
+
+<p class="note">ID ページと PW ページが別 HTML に分かれる従来の画面遷移式は <a href="stepped.html">パターン H (stepped.html)</a> を参照してください。</p>
+
+<h2>動作ログ</h2>
+<div id="log">（ボタンを押すとここに JS の動作が表示されます）</div>
+
+<details>
+<summary>実装詳細</summary>
+<pre>パターン I: 同一ページで DOM 差替 + pushState
+  - navigation 発火せず、KVO で url 変化を検知しないと再スキャンできない
+  - 現状の実装 (PR #247) は didFinishLoading 契機の readLoginForm のみゆえ、切り替え後の PW 入力欄は検出されない
+  - KVO で sameDocumentURLChange を検知する仕掛けは保存側にはあるが、自動入力側は didFinishLoading 限定</pre>
+</details>
+
+<script>
+function log(msg) {
+  const el = document.getElementById('log');
+  const ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+}
+
+function patternINext() {
+  const username = document.getElementById('usernameI').value;
+  log('パターン I: ID 入力完了 → DOM 差替 + pushState');
+  history.pushState({ username: username }, '', 'stepped-spa.html?step=password');
+  const container = document.getElementById('stepI');
+  container.innerHTML =
+    '<label>パスワード</label>' +
+    '<input id="passwordI" name="password" type="password" value="" autocomplete="current-password">' +
+    '<input type="hidden" name="username" value="' + username.replace(/"/g, '&quot;') + '" autocomplete="username">' +
+    '<button type="button" onclick="patternISubmit()">ログイン (パターン I)</button>';
+}
+
+function patternISubmit() {
+  log('パターン I: PW 入力完了 → fetch + pushState');
+  fetch('success.html').then(function (r) {
+    log('パターン I: fetch 完了 status=' + r.status);
+    history.pushState({}, '', 'success.html?pattern=I');
+    document.body.innerHTML =
+      '<h1>ログイン完了 (パターン I)</h1>' +
+      '<p>SPA 式 2 段階ログインが完了しました。URL は書き換わっていますが、実際のページ遷移は発生していません。</p>' +
+      '<p><a href="index.html">← トップへ戻る</a></p>';
+  });
+}
+</script>
+
+</body>
+</html>

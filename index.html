@@ -40,8 +40,13 @@ code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14p
 </div>
 
 <div class="card">
-<a href="stepped.html">Google 式 2 段階ログインテスト →</a>
-<p>ID を先に入力させ、次画面でパスワードを入力させる 2 段階パターン。Google (accounts.google.com) や Microsoft (login.microsoftonline.com) が採用する形式です。</p>
+<a href="stepped.html">パターン H: ネイティブ 2 画面遷移 →</a>
+<p>ID ページと PW ページが別 HTML に分かれた古典的な 2 段階ログイン。ID を先に入力させ、form 送信で次画面 (<code>stepped-password.html</code>) に遷移してパスワードを入力させます。</p>
+</div>
+
+<div class="card">
+<a href="stepped-spa.html">パターン I: SPA 式 2 段階 →</a>
+<p>Google (accounts.google.com) 本家と同型の SPA 式 2 段階。同一ページ内で DOM を差し替えて ID → PW に切り替わり、<code>history.pushState</code> で URL のみ書き換わります。</p>
 </div>
 
 <div class="card">
