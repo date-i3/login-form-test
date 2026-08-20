@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>パターン M: 同一ページに複数のログインフォーム</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>パターン M: 同一ページに複数のログインフォーム</h1>
+<p>同一ページに独立した <code>&lt;form&gt;</code> が 2 つあり、それぞれ ID 欄と PW 欄を 1 つずつ持つ構成。</p>
+<p>設計 (Confluence: フォーム判定 &gt; PW 欄) では「同じページに複数のログインフォームがある」ケースは<strong>保存・自動入力とも対応対象外 (×)</strong>とされている。</p>
+
+<form id="memberForm" action="success.html" method="GET">
+  <h2>会員ログイン</h2>
+  <label for="memberId">会員 ID</label>
+  <input type="text" id="memberId" name="memberId" value="" autocomplete="username">
+  <label for="memberPw">パスワード</label>
+  <input type="password" id="memberPw" name="memberPw" value="" autocomplete="current-password">
+  <input type="hidden" name="pattern" value="M-member">
+  <button type="submit">会員ログイン (パターン M)</button>
+</form>
+
+<form id="adminForm" action="success.html" method="GET">
+  <h2>管理者ログイン</h2>
+  <label for="adminId">管理者 ID</label>
+  <input type="text" id="adminId" name="adminId" value="" autocomplete="username">
+  <label for="adminPw">パスワード</label>
+  <input type="password" id="adminPw" name="adminPw" value="" autocomplete="current-password">
+  <input type="hidden" name="pattern" value="M-admin">
+  <button type="submit">管理者ログイン (パターン M)</button>
+</form>
+
+<p class="note">期待動作: どちらのフォームで submit しても、保存ダイアログ・自動入力ダイアログとも表示されない。実装が form 単位でグルーピングし <code>filtered[0]</code> を無条件採用している場合、先頭の会員フォームだけが自動入力・保存の対象となってしまう恐れがある (バグ)。</p>
+
+<details>
+<summary>実装メモ（開発者向け）</summary>
+<pre>readLoginForm.js findVisiblePasswordInput() の挙動:
+  - ページ内の全 input を収集後、closest('form') で form 単位に grouping
+  - 各グループから password 型が可視かつ 1 つだけの form を filtered に採用
+  - filtered[0] を先頭優先で無条件採用
+  - 本ページのように「PW 欄 1 個ずつの form が 2 つ」ある場合、
+    filtered に 2 つのフォームが積まれ、先頭 (memberForm) だけが採用されてしまう
+
+設計 (Confluence: フォーム判定 &gt; PW 欄) の除外条件:
+  - 同じページに複数のログインフォームがある
+  - PW 欄が 1 ページに 2 個以上ある (password change 型を含む)
+  - visibility:hidden / display:none の PW 欄
+  → いずれも保存・自動入力とも対応対象外 (×)
+
+サポート対象表 (要旨):
+  | 構成                                   | 保存 | 自動入力 |
+  |----------------------------------------|:----:|:--------:|
+  | 単一 form、PW 欄 1 個                  |  ○  |    ○    |
+  | 単一 form、PW 欄 2 個 (password change) |  ×  |    ×    |
+  | 複数 form、各 form PW 欄 1 個 (本ページ)|  ×  |    ×    |
+
+要点:
+  - 本ページは「取りこぼしを許容する仕様」の確認用
+  - filtered[0] 採用ロジックが残っていると先頭 form のみ誤検出する可能性あり</pre>
+</details>
+
+</body>
+</html>
