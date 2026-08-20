@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>パターン N: 複数フォーム × 片方 autocomplete 属性欠落</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>パターン N: 複数フォーム × 片方 autocomplete 属性欠落</h1>
+<p>パターン M の補強版。片方の form が <code>autocomplete</code> 属性を持たない場合、自動入力側の username 複数候補チェック (rule1) が機能せず、先頭 form の自動入力ダイアログが発火してしまうかを検証する。</p>
+<p>設計 (Confluence: フォーム判定 &gt; PW 欄) では「同じページに複数のログインフォームがある」は保存・自動入力とも対応対象外 (×) のはずである。</p>
+
+<form id="memberForm" action="success.html" method="GET">
+  <h2>会員ログイン (autocomplete 属性あり)</h2>
+  <label for="memberId">会員 ID</label>
+  <input type="text" id="memberId" name="memberId" value="" autocomplete="username">
+  <label for="memberPw">パスワード</label>
+  <input type="password" id="memberPw" name="memberPw" value="" autocomplete="current-password">
+  <input type="hidden" name="pattern" value="N-member">
+  <button type="submit">会員ログイン (パターン N)</button>
+</form>
+
+<form id="adminForm" action="success.html" method="GET">
+  <h2>管理者ログイン (autocomplete 属性なし)</h2>
+  <label for="adminLoginId">管理者 ID</label>
+  <input type="text" id="adminLoginId" name="adminLoginId" value="">
+  <label for="adminPassword">パスワード</label>
+  <input type="password" id="adminPassword" name="adminPassword" value="">
+  <input type="hidden" name="pattern" value="N-admin">
+  <button type="submit">管理者ログイン (パターン N)</button>
+</form>
+
+<p class="note">期待される動作: 保存・自動入力とも発火しない。ただし現行実装では <strong>保存</strong>は押した form が拾われる (パターン M と同じ穴) 、<strong>自動入力</strong>は rule1 で先頭 form の <code>memberId</code> が唯一命中となり、先頭 form が対象になる恐れがある (バグ)。</p>
+
+<details>
+<summary>実装メモ</summary>
+<pre>findUsernameInput() rule1:
+  const rule1 = visibleInputs.filter(i =&gt; autocompleteTokens(i).includes('username'));
+  if (rule1.length === 1) return rule1[0];
+  if (rule1.length &gt;= 2) return null;
+
+→ パターン M では 2 個ヒット → null で自動入力遮断
+→ パターン N では 1 個のみヒット → 先頭 form の memberId 採用 → 自動入力発火の恐れ
+
+設計 (Confluence フォーム判定 &gt; PW 欄) 除外条件:
+  - 複数のパスワード欄があるフォーム
+  - 用途を一意に特定できない
+サポート対象表:
+  同じページに複数のログインフォームがある | × | | ×</pre>
+</details>
+
+</body>
+</html>
