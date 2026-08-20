@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>パターン R: form 要素なし × 複数コンテナ</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form, .group { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+#log { background: #f5f5f5; padding: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; border-radius: 4px; margin-top: 16px; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>パターン R: form 要素なし × 複数コンテナ</h1>
+<p><code>&lt;form&gt;</code> 要素を使わず、<code>&lt;section class="group"&gt;</code> で 2 つのログインコンテナを配置。各コンテナは ID 欄 + PW 欄 + <code>type=button</code> の送信ボタンを持つ。</p>
+<p>resolveSearchRoot の container hop (dialog/section/article/main/div, 5 hop) が押したボタンの祖先 section を root にする挙動を検証。設計上は複数コンテナも「複数のログインフォーム」相当で対象外。</p>
+
+<section class="group" id="memberContainer">
+  <h2>会員ログイン</h2>
+  <label for="containerMemberId">会員 ID</label>
+  <input type="text" id="containerMemberId" value="" autocomplete="username">
+  <label for="containerMemberPw">パスワード</label>
+  <input type="password" id="containerMemberPw" value="" autocomplete="current-password">
+  <button type="button" onclick="submitContainer('member')">会員ログイン (パターン R)</button>
+</section>
+
+<section class="group" id="adminContainer">
+  <h2>管理者ログイン</h2>
+  <label for="containerAdminId">管理者 ID</label>
+  <input type="text" id="containerAdminId" value="" autocomplete="username">
+  <label for="containerAdminPw">パスワード</label>
+  <input type="password" id="containerAdminPw" value="" autocomplete="current-password">
+  <button type="button" onclick="submitContainer('admin')">管理者ログイン (パターン R)</button>
+</section>
+
+<p class="note">期待される動作: 保存・自動入力とも発火しない。修正前は resolveSearchRoot の container hop で押した section が root → その section 内 PW 1 個で filtered.length=1 で通過してしまう恐れ。修正後は scanLoginForm の document-wide 再検査で塞がれる。</p>
+
+<h2>動作ログ</h2>
+<div id="log">（ボタンを押すとここに JS の動作が表示されます）</div>
+
+<details>
+<summary>実装メモ</summary>
+<pre>resolveSearchRoot(eventTarget):
+  eventTarget.closest('form') が null (form 要素なし)
+  → container hop で [role="dialog"],section,article,main,div を 5 hop まで
+  → PW 欄を含む祖先 (section) を root に採用
+
+修正 (scanLoginForm):
+  if (root !== document &amp;&amp; findVisiblePasswordInput(document) === null) {
+    return null;
+  }
+  → root=section で通過しても document 全体で複数 PW 検知 → null</pre>
+</details>
+
+<script>
+function log(msg) {
+  const el = document.getElementById('log');
+  const ts = new Date().toISOString().substr(11, 12);
+  el.textContent += '[' + ts + '] ' + msg + '\n';
+}
+
+function submitContainer(kind) {
+  log('パターン R-' + kind + ': fetch + pushState 開始 (form 要素なし)');
+  fetch('success.html').then(function(r) {
+    log('パターン R-' + kind + ': fetch 完了 status=' + r.status);
+    history.pushState({}, '', 'success.html?pattern=R-' + kind);
+    document.body.innerHTML =
+      '<h1>ログイン完了 (パターン R-' + kind + ')</h1>' +
+      '<p>このページは元の DOM を JavaScript で差し替えただけです。フォームが消えているため「成功推定」の対象になります。</p>' +
+      '<p><a href="index.html">← トップへ戻る</a></p>';
+  });
+}
+</script>
+
+</body>
+</html>

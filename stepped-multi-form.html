@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>パターン Q: 2画面式 × 1画面目に複数フォーム</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>パターン Q: 2画面式 × 1画面目に複数フォーム</h1>
+<p>2画面式ログインの1画面目に独立した form が 2 つあり、各々に ID 欄 (autocomplete=username) のみ。遷移先は既存の <code>stepped-password.html</code> を流用。</p>
+<p>設計では「同じページに複数のログインフォームがある」は保存・自動入力とも対応対象外 (×)。</p>
+
+<form id="memberStep" action="stepped-password.html" method="GET">
+  <h2>会員ログイン</h2>
+  <label for="memberIdQ">会員 ID</label>
+  <input type="text" id="memberIdQ" name="usernameDisplay" value="" autocomplete="username">
+  <input type="hidden" name="pattern" value="Q-member">
+  <button type="submit">次へ (会員, パターン Q)</button>
+</form>
+
+<form id="adminStep" action="stepped-password.html" method="GET">
+  <h2>管理者ログイン</h2>
+  <label for="adminIdQ">管理者 ID</label>
+  <input type="text" id="adminIdQ" name="usernameDisplay" value="" autocomplete="username">
+  <input type="hidden" name="pattern" value="Q-admin">
+  <button type="submit">次へ (管理者, パターン Q)</button>
+</form>
+
+<p class="note">期待される動作: 1画面目では自動入力ダイアログが発火しない。2画面目 (stepped-password.html) で PW を入力しても、1画面目で使わなかった側の ID が誤って組み合わさる保存が発火しないこと。修正前は <code>lastUserTypedId</code> が最後入力を上書きするため保存側で誤組み合わせの恐れがある。</p>
+
+<details>
+<summary>実装メモ</summary>
+<pre>findUsernameInputWithoutPassword() rule1:
+  const rule1 = visibleInputs.filter(i =&gt; autocompleteTokens(i).includes('username'));
+  if (rule1.length === 1) return rule1[0];
+  if (rule1.length &gt;= 2) return null;
+
+パターン Q: memberIdQ / adminIdQ が両方 rule1 に命中 → null で自動入力遮断
+
+lastUserTypedId は input イベントで捕捉し最後入力を保持:
+  → 2画面式 pending として別 form 由来の ID が採用される恐れ (要検証)</pre>
+</details>
+
+</body>
+</html>

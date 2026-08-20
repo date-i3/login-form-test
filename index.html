@@ -64,6 +64,21 @@ code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14p
 <p>パターン M の補強版。片方の form が <code>autocomplete</code> 属性を持たない場合の自動入力ダイアログ発火を検証。</p>
 </div>
 
+<div class="card">
+<a href="multi-form-no-autocomplete-keywords.html">パターン O: 複数フォーム × autocomplete 全欠落 →</a>
+<p>両方の form が autocomplete 属性を持たず、name/id キーワード検出 (rule4) 頼みになる構成。</p>
+</div>
+
+<div class="card">
+<a href="stepped-multi-form.html">パターン Q: 2画面式 × 1画面目に複数フォーム →</a>
+<p>2画面式ログインの1画面目に独立した form が 2 つあり、findUsernameInputWithoutPassword と lastUserTypedId の挙動を検証。</p>
+</div>
+
+<div class="card">
+<a href="multi-container-no-form.html">パターン R: form 要素なし × 複数コンテナ →</a>
+<p><code>&lt;form&gt;</code> 要素を使わず <code>&lt;section&gt;</code> で 2 つのログインコンテナを配置。resolveSearchRoot の container hop 視野を検証。</p>
+</div>
+
 <h2>期待される動作</h2>
 <ul>
 <li>初回送信時：「このパスワードを保存しますか？」のダイアログが表示される</li>

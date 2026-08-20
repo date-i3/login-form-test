@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>パターン O: 複数フォーム × autocomplete 全欠落</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+form { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+input { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; font-size: 16px; }
+button { padding: 12px 16px; margin: 8px 0; font-size: 16px; width: 100%; cursor: pointer; }
+label { font-weight: 600; font-size: 14px; }
+details { margin: 16px 0; color: #666; font-size: 14px; }
+details summary { cursor: pointer; padding: 8px 0; }
+details pre { background: #f5f5f5; padding: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+.back { display: inline-block; margin-bottom: 16px; color: #007aff; text-decoration: none; }
+.note { color: #666; font-size: 14px; margin: 4px 0 16px; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← トップへ戻る</a>
+<h1>パターン O: 複数フォーム × autocomplete 全欠落</h1>
+<p>両方の form が <code>autocomplete</code> 属性を完全に持たず、ID 欄検出が name/id キーワードマッチ (rule4) に委ねられる構成。</p>
+<p>設計では「同じページに複数のログインフォームがある」は保存・自動入力とも対応対象外 (×)。</p>
+
+<form id="memberForm" action="success.html" method="GET">
+  <h2>会員ログイン</h2>
+  <label for="userEmail">メールアドレス</label>
+  <input type="text" id="userEmail" name="userEmail" value="">
+  <label for="userPassword">パスワード</label>
+  <input type="password" id="userPassword" name="userPassword" value="">
+  <input type="hidden" name="pattern" value="O-member">
+  <button type="submit">会員ログイン (パターン O)</button>
+</form>
+
+<form id="adminForm" action="success.html" method="GET">
+  <h2>管理者ログイン</h2>
+  <label for="loginId">ログイン ID</label>
+  <input type="text" id="loginId" name="loginId" value="">
+  <label for="loginPassword">パスワード</label>
+  <input type="password" id="loginPassword" name="loginPassword" value="">
+  <input type="hidden" name="pattern" value="O-admin">
+  <button type="submit">管理者ログイン (パターン O)</button>
+</form>
+
+<p class="note">期待される動作: 保存・自動入力とも発火しない。修正前は rule4 (name/id keyword) 命中が両 form で複数 → null で偶然遮断だが、PW 側 filtered[0] の問題は残存。修正後は PW 判定と保存経路の document 全体再検査で確実に遮断される想定。</p>
+
+<details>
+<summary>実装メモ</summary>
+<pre>findUsernameInput() rule4:
+  const rule4 = visibleInputs.filter(i =&gt; {
+    const idName = ((i.id || '') + ' ' + (i.name || '')).toLowerCase();
+    ...
+  });
+  if (rule4.length === 1) return rule4[0];
+  if (rule4.length &gt;= 2) return null;
+
+パターン O: userEmail / loginId が両方 rule4 に命中 → null
+
+修正 (findVisiblePasswordInput):
+  filtered.length !== 1 で null 返却
+  → 複数 form 分散型を PW 検出段で塞ぐ</pre>
+</details>
+
+</body>
+</html>
